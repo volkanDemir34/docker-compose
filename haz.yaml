@@ -1,0 +1,66 @@
+version: '3.9'
+
+services:
+  hazelcast:
+    container_name: hazelcast
+    image: hazelcast/hazelcast
+    environment:
+      HZ_NETWORK_PUBLICADDRESS: '127.0.0.1:5701'
+      HZ_NETWORK_RESTAPI_ENABLED: 'true'
+    ports:
+      - '5701:5701'
+  management-center:
+    container_name: management-center
+    image: hazelcast/management-center
+    depends_on:
+      - hazelcast
+    environment:
+      MC_ADMIN_USER: admin
+      MC_ADMIN_PASSWORD: myPassword11
+      MC_INIT_CMD: './bin/mc-conf.sh cluster add -ma hazelcast:5701 -cn dev'
+    ports:
+      - '8091:8080'
+    volumes:
+      - hazelcast-data:/data
+  mysql:
+    container_name: mysql
+    image: mysql:latest
+    restart: always
+    environment:
+      MYSQL_DATABASE: bridge
+      MYSQL_USER: bridge
+      MYSQL_PASSWORD: bridge123
+      MYSQL_ROOT_PASSWORD: password
+    ports:
+      - '3307:3306'
+    volumes:
+      - mysqldb-data:/var/lib/mysql
+  mongodb:
+    container_name: mongodb
+    image: mongo
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: myPassword11
+    volumes:
+      - mongodb-data:/data/db
+      - mongo-configdb-data:/data/configdb
+    ports:
+      - '27017:27017'
+    restart: unless-stopped
+  mongo-express:
+    container_name: mongodb-express
+    image: mongo-express
+    depends_on:
+      - mongodb
+    restart: always
+    ports:
+      - '8092:8081'
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: admin
+      ME_CONFIG_MONGODB_ADMINPASSWORD: myPassword11
+      ME_CONFIG_MONGODB_SERVER: mongodb
+volumes:
+  mysqldb-data:
+  mongodb-data:
+  mongo-configdb-data:
+  hazelcast-data:
